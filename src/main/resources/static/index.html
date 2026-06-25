@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strataview - Stratejik Hizalama Gösterge Paneli</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Outfit (headings) & Inter (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        outfit: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-slate-800">
+
+    <!-- Top Navigation / Header -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+            <div class="flex items-center space-x-3">
+                <!-- Brand Icon -->
+                <div class="w-10 h-10 rounded-lg bg-indigo-500 flex items-center justify-center font-outfit font-extrabold text-xl tracking-wider text-white shadow-lg shadow-indigo-500/30">
+                    SV
+                </div>
+                <div>
+                    <h1 class="font-outfit font-bold text-lg leading-tight tracking-wide">Strataview</h1>
+                    <p class="text-xs text-slate-400">Stratejik Hizalama ve KPI Gösterge Paneli</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-full text-slate-300">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Backend Bağlantısı Başarılı</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Wrapper -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Top Summary Cards & KPI Score Card -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Left Overview info -->
+            <div class="bg-gradient-to-br from-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl md:col-span-2 flex flex-col justify-between">
+                <div>
+                    <span class="text-xs font-semibold tracking-wider text-indigo-300 uppercase">Operasyonel Etkinlik</span>
+                    <h2 class="font-outfit font-bold text-3xl mt-1 mb-3">Operasyonel eforunuz stratejik hedeflerinizle ne kadar uyumlu?</h2>
+                    <p class="text-sm text-slate-300 max-w-xl">
+                        Strataview, geliştirici görevlerini ve story point'lerini doğrudan üst düzey stratejik hedeflere (OKR) eşler. Uyumsuzlukları erkenden tespit etmenizi, kaynakları dinamik olarak kaydırmanızı ve mühendislik hızını iş değeriyle dengelemenizi sağlar.
+                    </p>
+                </div>
+                <div class="mt-6 flex items-center space-x-4 border-t border-indigo-900/50 pt-4 text-xs text-indigo-200">
+                    <div>Toplam Görev: <span id="total-tasks" class="font-bold text-white text-sm">-</span></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-indigo-800"></div>
+                    <div>Toplam Efor: <span id="total-story-points" class="font-bold text-white text-sm">-</span></div>
+                </div>
+            </div>
+
+            <!-- Alignment Score Card (Dynamically colored based on state) -->
+            <div id="alignment-card" class="bg-white rounded-2xl border border-red-100 p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden">
+                <!-- Status Background Accent Pattern -->
+                <div id="alignment-card-bg" class="absolute right-0 top-0 w-24 h-24 bg-red-50 rounded-bl-full -z-0 opacity-40"></div>
+
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <span class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Hizalama KPI</span>
+                        <h3 class="font-outfit font-bold text-lg text-slate-800 mt-0.5">Uyum Skoru</h3>
+                    </div>
+                    <!-- Status Alarm Badge -->
+                    <span id="alignment-status" class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
+                        Durum: -
+                    </span>
+                </div>
+
+                <div class="relative z-10 my-4 flex items-baseline">
+                    <span id="alignment-score" class="font-outfit font-extrabold text-6xl text-slate-400">-</span>
+                    <span class="text-sm text-slate-400 ml-2 font-medium">Stratejik Uyum</span>
+                </div>
+
+                <div class="relative z-10 border-t border-slate-100 pt-4">
+                    <div id="alignment-warning-wrapper" class="flex items-center space-x-2 text-xs text-red-600">
+                        <!-- Warning Icon (Inline SVG) -->
+                        <svg id="alignment-warning-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <span id="alignment-warning-text" class="font-semibold">Hizalanma raporu yükleniyor...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Middle Comparison Area: Progress Bars comparing Target vs Actual -->
+        <section class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6">
+                <div>
+                    <h3 class="font-outfit font-bold text-xl text-slate-900">Stratejik Hedef vs. Gerçekleşen Efor Dağılımı</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Tanımlanmış OKR/KPI hedefleri ile gerçekleşen görev dağılımlarının (Story Point) kıyaslanması</p>
+                </div>
+                <div class="mt-2 sm:mt-0 flex items-center space-x-4 text-xs">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="w-3 h-3 rounded bg-indigo-500"></span>
+                        <span class="font-medium text-slate-600">Hedef %</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5">
+                        <span class="w-3 h-3 rounded bg-red-400"></span>
+                        <span class="font-medium text-slate-600">Gerçekleşen %</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Objective Progress Bars Grid -->
+            <div id="objectives-container" class="space-y-6">
+                <!-- Will be loaded dynamically from API -->
+                <div class="text-center text-slate-400 py-8">Hedef efor dağılımı yükleniyor...</div>
+            </div>
+        </section>
+
+        <!-- Bottom Layout: Two Columns (Task management & Simulation) -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <!-- Left Column: Dummy Task Add Form & Task List Table (Col Span: 7) -->
+            <div class="lg:col-span-7 space-y-6">
+                <!-- Task Addition Card -->
+                <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                    <h3 class="font-outfit font-bold text-lg text-slate-900 mb-4">Yeni Dummy Görev Ekle</h3>
+                    <form id="task-form" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <!-- Task Name -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Görev Başlığı</label>
+                                <input type="text" id="task-title" required placeholder="Örn: OIDC giriş akışını uygula" class="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+                            </div>
+                            <!-- Story Point -->
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Story Point (Efor - SP)</label>
+                                <input type="number" id="task-story-point" required min="1" placeholder="Örn: 5" class="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+                            </div>
+                        </div>
+
+                        <!-- Objective Dropdown -->
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Stratejik OKR Hedefi</label>
+                            <select id="task-target-select" required class="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white">
+                                <option value="" disabled selected>Hedef seçin...</option>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+
+                        <button type="submit" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/25 transition-all">
+                            Görevi Backlog'a Ekle
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Task List Card -->
+                <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-outfit font-bold text-lg text-slate-900">Operasyonel Görev Listesi (Backlog)</h3>
+                        <span id="tasks-count" class="px-2 py-0.5 rounded bg-slate-100 text-slate-500 text-xs font-medium">- Görev</span>
+                    </div>
+
+                    <!-- Tasks Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm text-slate-700">
+                            <thead>
+                                <tr class="border-b border-slate-100 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                                    <th class="py-3 px-2">Görev Başlığı</th>
+                                    <th class="py-3 px-2 text-center">Efor (SP)</th>
+                                    <th class="py-3 px-2">Bağlı Stratejik Hedef</th>
+                                    <th class="py-3 px-2 text-right">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tasks-table-body" class="divide-y divide-slate-100">
+                                <!-- Will be loaded dynamically from API -->
+                                <tr>
+                                    <td colspan="4" class="text-center py-6 text-slate-400">Backlog yükleniyor...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Target Effort Simulation / What-if Analysis (Col Span: 5) -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col h-full justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="font-outfit font-bold text-lg text-slate-900">What-if Senaryo Simülatörü</h3>
+                            <!-- Simulator Indicator -->
+                            <span class="px-2 py-0.5 rounded bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wider">
+                                Canlı Simülasyon
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-6">
+                            Stratejik OKR hedeflerini kaydırarak efor dağılımlarını değiştirebilir ve genel uyum skoruna etkisini canlı simüle edebilirsiniz.
+                        </p>
+
+                        <!-- Simulation Sliders -->
+                        <div id="sliders-container" class="space-y-6">
+                            <!-- Will be loaded dynamically from API -->
+                            <div class="text-center text-slate-400 py-6">Kaydırıcılar yükleniyor...</div>
+                        </div>
+
+                        <!-- Warnings / Notes -->
+                        <div class="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-500 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span>Hedeflerin Toplamı:</span>
+                                <span class="font-bold text-slate-700" id="total-val">100%</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400 leading-normal">
+                                Not: Stratejik hedeflerin toplamı tam olarak %100 olmalıdır. Kaydırıcıları sürükleyerek farklı efor dağılımlarını anlık simüle edebilirsiniz.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-4 border-t border-slate-100 flex space-x-3">
+                        <button id="reset-sim" class="flex-1 py-2 px-4 border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-sm rounded-xl transition-colors">
+                            Simülasyonu Sıfırla
+                        </button>
+                        <button id="save-sim" class="flex-1 py-2 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 font-semibold text-sm rounded-xl transition-colors">
+                            Backend'e Kaydet
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 mt-16 bg-white py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
+            &copy; 2026 Strataview Hizalanma Analitiği. Stratejik şeffaflık ve efor uyumluluğu için tasarlanmıştır.
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
