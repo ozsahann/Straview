@@ -1,3 +1,5 @@
+const BASE_URL = (window.location.protocol === 'file:') ? 'http://localhost:8080' : '';
+
 // LocalStorage Mock Database Keys
 const DB_TARGETS_KEY = 'strataview_targets';
 const DB_TASKS_KEY = 'strataview_tasks';
@@ -101,21 +103,63 @@ function calculateAlignmentLocal() {
 let localTargets = [];
 let localTasks = [];
 let currentDashboard = null;
+let useBackend = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
 
 async function initApp() {
+    await checkBackendConnection();
     await loadInitialData();
     setupEventListeners();
 }
 
+async function checkBackendConnection() {
+    try {
+        const res = await fetch(BASE_URL + '/api/targets');
+        if (res.ok) {
+            useBackend = true;
+            console.log("Backend bağlantısı başarılı. Gerçek veritabanı kullanılıyor.");
+            const badge = document.getElementById('backend-status-badge');
+            if (badge) {
+                badge.className = "flex items-center space-x-2 text-xs bg-emerald-950 border border-emerald-800 px-3 py-1.5 rounded-full text-emerald-300";
+                badge.innerHTML = `
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Backend Bağlantısı Aktif (H2 Veritabanı)</span>
+                `;
+            }
+        }
+    } catch (e) {
+        useBackend = false;
+        console.log("Backend sunucusuna erişilemedi. Tarayıcı hafızası (LocalStorage) kullanılıyor.");
+        const badge = document.getElementById('backend-status-badge');
+        if (badge) {
+            badge.className = "flex items-center space-x-2 text-xs bg-amber-950 border border-amber-800 px-3 py-1.5 rounded-full text-amber-300";
+            badge.innerHTML = `
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <span>Tarayıcı Hafızası Modu (Offline / Vercel)</span>
+            `;
+        }
+    }
+}
+
 async function loadInitialData() {
     try {
-        localTargets = getMockTargets();
-        localTasks = getMockTasks();
-        currentDashboard = calculateAlignmentLocal();
+        if (useBackend) {
+            const targetsRes = await fetch(BASE_URL + '/api/targets');
+            localTargets = await targetsRes.json();
+
+            const tasksRes = await fetch(BASE_URL + '/api/tasks');
+            localTasks = await tasksRes.json();
+
+            const dashRes = await fetch(BASE_URL + '/api/dashboard');
+            currentDashboard = await dashRes.json();
+        } else {
+            localTargets = getMockTargets();
+            localTasks = getMockTasks();
+            currentDashboard = calculateAlignmentLocal();
+        }
 
         renderDashboard();
         populateTargetSelect();
@@ -472,16 +516,25 @@ async function handleTaskSubmit(e) {
     }
 
     try {
-        const tasks = getMockTasks();
-        const nextId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
-        const newTask = {
-            id: nextId,
-            title: title,
-            storyPoint: storyPoint,
-            strategicTargetId: strategicTargetId
-        };
-        tasks.push(newTask);
-        saveMockTasks(tasks);
+        if (useBackend) {
+            const res = await fetch(BASE_URL + '/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, storyPoint, strategicTargetId })
+            });
+            if (!res.ok) throw new Error("Backend error");
+        } else {
+            const tasks = getMockTasks();
+            const nextId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
+            const newTask = {
+                id: nextId,
+                title: title,
+                storyPoint: storyPoint,
+                strategicTargetId: strategicTargetId
+            };
+            tasks.push(newTask);
+            saveMockTasks(tasks);
+        }
 
         document.getElementById('task-form').reset();
         await loadInitialData();
@@ -495,9 +548,16 @@ async function deleteTask(taskId) {
     if (!confirm("Görevi silmek istediğinize emin misiniz?")) return;
 
     try {
-        let tasks = getMockTasks();
-        tasks = tasks.filter(t => t.id !== taskId);
-        saveMockTasks(tasks);
+        if (useBackend) {
+            const res = await fetch(BASE_URL + `/api/tasks/${taskId}`, {
+                method: 'DELETE'
+            });
+            if (!res.ok) throw new Error("Backend error");
+        } else {
+            let tasks = getMockTasks();
+            tasks = tasks.filter(t => t.id !== taskId);
+            saveMockTasks(tasks);
+        }
 
         await loadInitialData();
     } catch (err) {
@@ -517,18 +577,31 @@ async function applySimulationToBackend() {
     }
 
     try {
-        const targets = getMockTargets();
-        sliders.forEach(slider => {
-            const id = parseInt(slider.getAttribute('data-target-id'));
-            const val = parseFloat(slider.value);
-            const target = targets.find(t => t.id === id);
-            if (target) {
-                target.targetPercentage = val;
-            }
-        });
-        saveMockTargets(targets);
-
-        alert("Yeni stratejik hedefler başarıyla tarayıcı hafızasına kaydedildi!");
+        if (useBackend) {
+            const updatePromises = Array.from(sliders).map(slider => {
+                const id = slider.getAttribute('data-target-id');
+                const val = parseFloat(slider.value);
+                return fetch(BASE_URL + `/api/targets/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ targetPercentage: val })
+                });
+            });
+            await Promise.all(updatePromises);
+            alert("Yeni stratejik hedefler başarıyla veri tabanına kaydedildi!");
+        } else {
+            const targets = getMockTargets();
+            sliders.forEach(slider => {
+                const id = parseInt(slider.getAttribute('data-target-id'));
+                const val = parseFloat(slider.value);
+                const target = targets.find(t => t.id === id);
+                if (target) {
+                    target.targetPercentage = val;
+                }
+            });
+            saveMockTargets(targets);
+            alert("Yeni stratejik hedefler başarıyla tarayıcı hafızasına kaydedildi!");
+        }
         await loadInitialData();
     } catch (err) {
         console.error("Error applying simulation targets:", err);
