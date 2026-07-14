@@ -6,14 +6,18 @@ public class DashboardDTO {
 
     private int alignmentScore;
     private String status;
+    private int completedAlignmentScore;
+    private String completedStatus;
     private List<TargetStatusDTO> targetStatuses;
 
     public DashboardDTO() {
     }
 
-    public DashboardDTO(int alignmentScore, String status, List<TargetStatusDTO> targetStatuses) {
+    public DashboardDTO(int alignmentScore, String status, int completedAlignmentScore, String completedStatus, List<TargetStatusDTO> targetStatuses) {
         this.alignmentScore = alignmentScore;
         this.status = status;
+        this.completedAlignmentScore = completedAlignmentScore;
+        this.completedStatus = completedStatus;
         this.targetStatuses = targetStatuses;
     }
 
@@ -33,6 +37,22 @@ public class DashboardDTO {
         this.status = status;
     }
 
+    public int getCompletedAlignmentScore() {
+        return completedAlignmentScore;
+    }
+
+    public void setCompletedAlignmentScore(int completedAlignmentScore) {
+        this.completedAlignmentScore = completedAlignmentScore;
+    }
+
+    public String getCompletedStatus() {
+        return completedStatus;
+    }
+
+    public void setCompletedStatus(String completedStatus) {
+        this.completedStatus = completedStatus;
+    }
+
     public List<TargetStatusDTO> getTargetStatuses() {
         return targetStatuses;
     }
@@ -47,16 +67,20 @@ public class DashboardDTO {
         private Double targetPercentage;
         private Double actualPercentage;
         private Double alignmentGap;
+        private Double completedPercentage;
+        private Double completedAlignmentGap;
 
         public TargetStatusDTO() {
         }
 
-        public TargetStatusDTO(Long targetId, String targetName, Double targetPercentage, Double actualPercentage, Double alignmentGap) {
+        public TargetStatusDTO(Long targetId, String targetName, Double targetPercentage, Double actualPercentage, Double alignmentGap, Double completedPercentage, Double completedAlignmentGap) {
             this.targetId = targetId;
             this.targetName = targetName;
             this.targetPercentage = targetPercentage;
             this.actualPercentage = actualPercentage;
             this.alignmentGap = alignmentGap;
+            this.completedPercentage = completedPercentage;
+            this.completedAlignmentGap = completedAlignmentGap;
         }
 
         public Long getTargetId() {
@@ -97,6 +121,22 @@ public class DashboardDTO {
 
         public void setAlignmentGap(Double alignmentGap) {
             this.alignmentGap = alignmentGap;
+        }
+
+        public Double getCompletedPercentage() {
+            return completedPercentage;
+        }
+
+        public void setCompletedPercentage(Double completedPercentage) {
+            this.completedPercentage = completedPercentage;
+        }
+
+        public Double getCompletedAlignmentGap() {
+            return completedAlignmentGap;
+        }
+
+        public void setCompletedAlignmentGap(Double completedAlignmentGap) {
+            this.completedAlignmentGap = completedAlignmentGap;
         }
     }
 }

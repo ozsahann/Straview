@@ -1,6 +1,8 @@
 package com.strataview.dashboard.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -20,6 +22,9 @@ public class Task {
 
     private Long strategicTargetId;
 
+    @Enumerated(EnumType.STRING)
+    private TaskStatus status = TaskStatus.TODO;
+
     public Task() {
     }
 
@@ -27,6 +32,14 @@ public class Task {
         this.title = title;
         this.storyPoint = storyPoint;
         this.strategicTargetId = strategicTargetId;
+        this.status = TaskStatus.TODO;
+    }
+
+    public Task(String title, Integer storyPoint, Long strategicTargetId, TaskStatus status) {
+        this.title = title;
+        this.storyPoint = storyPoint;
+        this.strategicTargetId = strategicTargetId;
+        this.status = status != null ? status : TaskStatus.TODO;
     }
 
     public Long getId() {
@@ -59,5 +72,13 @@ public class Task {
 
     public void setStrategicTargetId(Long strategicTargetId) {
         this.strategicTargetId = strategicTargetId;
+    }
+
+    public TaskStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(TaskStatus status) {
+        this.status = status;
     }
 }

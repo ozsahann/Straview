@@ -2,7 +2,9 @@ package com.strataview.dashboard.controller;
 
 import com.strataview.dashboard.model.StrategicTarget;
 import com.strataview.dashboard.repository.StrategicTargetRepository;
+import com.strataview.dashboard.repository.TaskRepository;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -12,9 +14,11 @@ import java.util.List;
 public class StrategicTargetController {
 
     private final StrategicTargetRepository targetRepository;
+    private final TaskRepository taskRepository;
 
-    public StrategicTargetController(StrategicTargetRepository targetRepository) {
+    public StrategicTargetController(StrategicTargetRepository targetRepository, TaskRepository taskRepository) {
         this.targetRepository = targetRepository;
+        this.taskRepository = taskRepository;
     }
 
     @GetMapping
@@ -38,5 +42,12 @@ public class StrategicTargetController {
                     return targetRepository.save(target);
                 })
                 .orElseThrow(() -> new IllegalArgumentException("Target not found with id " + id));
+    }
+
+    @DeleteMapping("/{id}")
+    @Transactional
+    public void deleteTarget(@PathVariable Long id) {
+        taskRepository.deleteByStrategicTargetId(id);
+        targetRepository.deleteById(id);
     }
 }
