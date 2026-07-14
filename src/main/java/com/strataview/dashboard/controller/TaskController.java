@@ -33,11 +33,12 @@ public class TaskController {
         taskRepository.deleteById(id);
     }
 
-    @PutMapping("/{id}/status")
-    public Task updateTaskStatus(@PathVariable Long id, @RequestParam TaskStatus status) {
+    @RequestMapping(value = "/{id}/status", method = {RequestMethod.PUT, RequestMethod.PATCH})
+    public Task updateTaskStatus(@PathVariable Long id, @RequestParam String status) {
+        TaskStatus taskStatus = TaskStatus.valueOf(status.toUpperCase().trim());
         return taskRepository.findById(id)
                 .map(task -> {
-                    task.setStatus(status);
+                    task.setStatus(taskStatus);
                     return taskRepository.save(task);
                 })
                 .orElseThrow(() -> new IllegalArgumentException("Task not found with id " + id));

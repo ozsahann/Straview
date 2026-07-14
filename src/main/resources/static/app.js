@@ -50,7 +50,9 @@ function calculateAlignmentLocal() {
     const targets = getMockTargets();
     const tasks = getMockTasks();
 
-    const totalStoryPoints = tasks.reduce((sum, t) => sum + t.storyPoint, 0);
+    const totalStoryPoints = tasks
+        .filter(t => t.status !== 'TODO')
+        .reduce((sum, t) => sum + t.storyPoint, 0);
     const totalCompletedStoryPoints = tasks
         .filter(t => t.status === 'DONE')
         .reduce((sum, t) => sum + t.storyPoint, 0);
@@ -63,7 +65,7 @@ function calculateAlignmentLocal() {
 
     targets.forEach(target => {
         const targetStoryPoints = tasks
-            .filter(t => t.strategicTargetId === target.id)
+            .filter(t => t.strategicTargetId === target.id && t.status !== 'TODO')
             .reduce((sum, t) => sum + t.storyPoint, 0);
 
         const targetCompletedStoryPoints = tasks
@@ -110,7 +112,7 @@ function calculateAlignmentLocal() {
     });
 
     let alignmentScore = 100;
-    if (targetStatuses.length > 0) {
+    if (targetStatuses.length > 0 && totalStoryPoints > 0) {
         alignmentScore = Math.round(100.0 - (totalAbsoluteGap / 2.0));
         alignmentScore = Math.max(0, Math.min(100, alignmentScore));
     }
@@ -369,8 +371,15 @@ function populateTargetSelect() {
 }
 
 function renderTasksTable() {
-    const tbody = document.getElementById('tasks-table-body');
-    tbody.innerHTML = '';
+    const todoCol = document.getElementById('tasks-todo');
+    const inprogressCol = document.getElementById('tasks-inprogress');
+    const doneCol = document.getElementById('tasks-done');
+
+    if (!todoCol || !inprogressCol || !doneCol) return;
+
+    todoCol.innerHTML = '';
+    inprogressCol.innerHTML = '';
+    doneCol.innerHTML = '';
 
     const filteredTasks = localTasks.filter(task => {
         const matchesSearch = task.title.toLowerCase().includes(filterSearchQuery.toLowerCase());
@@ -378,92 +387,132 @@ function renderTasksTable() {
         return matchesSearch && matchesTarget;
     });
 
-    if (filteredTasks.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" class="text-center py-6 text-slate-400">Görev bulunmuyor veya arama kriteriyle eşleşen sonuç yok.</td>
-            </tr>
-        `;
-        const countEl = document.getElementById('tasks-count');
-        countEl.innerText = "0 Görev";
-        return;
+    let countTodo = 0;
+    let countInprogress = 0;
+    let countDone = 0;
+
+    filteredTasks.forEach(task => {
+        if (task.status === 'TODO') countTodo++;
+        else if (task.status === 'IN_PROGRESS') countInprogress++;
+        else if (task.status === 'DONE') countDone++;
+    });
+
+    document.getElementById('count-todo').innerText = countTodo;
+    document.getElementById('count-inprogress').innerText = countInprogress;
+    document.getElementById('count-done').innerText = countDone;
+
+    const countEl = document.getElementById('tasks-count');
+    if (countEl) {
+        if (filteredTasks.length !== localTasks.length) {
+            countEl.innerText = `${filteredTasks.length} / ${localTasks.length} Görev`;
+        } else {
+            countEl.innerText = `${localTasks.length} Görev`;
+        }
     }
+
+    if (countTodo === 0) todoCol.innerHTML = '<div class="text-center text-slate-400 py-6 text-xs">Görev bulunmuyor.</div>';
+    if (countInprogress === 0) inprogressCol.innerHTML = '<div class="text-center text-slate-400 py-6 text-xs">Görev bulunmuyor.</div>';
+    if (countDone === 0) doneCol.innerHTML = '<div class="text-center text-slate-400 py-6 text-xs">Görev bulunmuyor.</div>';
 
     // Map targets by ID
     const targetMap = {};
     localTargets.forEach(t => { targetMap[t.id] = t.name; });
 
-    const countEl = document.getElementById('tasks-count');
-    if (filteredTasks.length !== localTasks.length) {
-        countEl.innerText = `${filteredTasks.length} / ${localTasks.length} Görev`;
-    } else {
-        countEl.innerText = `${localTasks.length} Görev`;
-    }
+    const colors = [
+        'bg-blue-50 text-blue-700 border border-blue-100', 
+        'bg-amber-50 text-amber-700 border border-amber-100', 
+        'bg-emerald-50 text-emerald-700 border border-emerald-100', 
+        'bg-purple-50 text-purple-700 border border-purple-100'
+    ];
 
-    const colors = ['bg-blue-50 text-blue-700', 'bg-amber-50 text-amber-700', 'bg-emerald-50 text-emerald-700', 'bg-purple-50 text-purple-700'];
+    function appendCardToColumn(status, html) {
+        if (status === 'TODO') {
+            if (todoCol.innerHTML.includes('Görev bulunmuyor.')) todoCol.innerHTML = '';
+            todoCol.insertAdjacentHTML('beforeend', html);
+        } else if (status === 'IN_PROGRESS') {
+            if (inprogressCol.innerHTML.includes('Görev bulunmuyor.')) inprogressCol.innerHTML = '';
+            inprogressCol.insertAdjacentHTML('beforeend', html);
+        } else if (status === 'DONE') {
+            if (doneCol.innerHTML.includes('Görev bulunmuyor.')) doneCol.innerHTML = '';
+            doneCol.insertAdjacentHTML('beforeend', html);
+        }
+    }
 
     filteredTasks.forEach(task => {
         const targetName = targetMap[task.strategicTargetId] || "Bilinmeyen Hedef";
-        const colorClass = colors[task.strategicTargetId % colors.length] || 'bg-slate-100 text-slate-700';
+        const colorClass = colors[task.strategicTargetId % colors.length] || 'bg-slate-100 text-slate-700 border border-slate-200';
         const statusVal = task.status || 'TODO';
 
         if (task.id === activeEditTaskId) {
-            // Edit Mode Row
+            // Edit Mode Card (Compact)
             let targetOptions = '';
             localTargets.forEach(t => {
                 targetOptions += `<option value="${t.id}" ${t.id === task.strategicTargetId ? 'selected' : ''}>${t.name}</option>`;
             });
 
-            const rowHtml = `
-                <tr class="bg-indigo-50/30 animate-pulse-slow">
-                    <td class="py-2.5 px-2">
-                        <input type="text" id="edit-title-${task.id}" value="${task.title}" class="w-full text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white">
-                    </td>
-                    <td class="py-2.5 px-2 text-center">
-                        <input type="number" id="edit-sp-${task.id}" value="${task.storyPoint}" min="1" class="w-16 text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white text-center font-bold">
-                    </td>
-                    <td class="py-2.5 px-2">
-                        <select id="edit-target-${task.id}" class="text-xs border border-slate-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white">
+            const cardHtml = `
+                <div id="task-card-${task.id}" class="bg-indigo-50/30 rounded-xl border border-indigo-200/60 p-3 shadow-sm relative space-y-2">
+                    <div>
+                        <label class="block text-[8px] font-bold text-indigo-800 uppercase mb-0.5">Görev Başlığı</label>
+                        <input type="text" id="edit-title-${task.id}" value="${task.title}" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[8px] font-bold text-indigo-800 uppercase mb-0.5">Efor (SP)</label>
+                            <input type="number" id="edit-sp-${task.id}" value="${task.storyPoint}" min="1" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1 text-center font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-[8px] font-bold text-indigo-800 uppercase mb-0.5">Durum</label>
+                            <select id="edit-status-${task.id}" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all text-slate-600">
+                                <option value="TODO" ${statusVal === 'TODO' ? 'selected' : ''}>TODO</option>
+                                <option value="IN_PROGRESS" ${statusVal === 'IN_PROGRESS' ? 'selected' : ''}>IN_PROGRESS</option>
+                                <option value="DONE" ${statusVal === 'DONE' ? 'selected' : ''}>DONE</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[8px] font-bold text-indigo-800 uppercase mb-0.5">Bağlı OKR Hedefi</label>
+                        <select id="edit-target-${task.id}" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all text-slate-600">
                             ${targetOptions}
                         </select>
-                    </td>
-                    <td class="py-2.5 px-2">
-                        <select id="edit-status-${task.id}" class="text-xs border border-slate-300 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white">
-                            <option value="TODO" ${statusVal === 'TODO' ? 'selected' : ''}>TODO</option>
-                            <option value="IN_PROGRESS" ${statusVal === 'IN_PROGRESS' ? 'selected' : ''}>IN_PROGRESS</option>
-                            <option value="DONE" ${statusVal === 'DONE' ? 'selected' : ''}>DONE</option>
-                        </select>
-                    </td>
-                    <td class="py-2.5 px-2 text-right whitespace-nowrap">
-                        <button onclick="saveEditTask(${task.id})" class="text-xs font-semibold text-emerald-600 hover:text-emerald-800 transition-colors mr-2.5">Kaydet</button>
-                        <button onclick="cancelEditTask()" class="text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors">İptal</button>
-                    </td>
-                </tr>
+                    </div>
+                    <div class="flex justify-end space-x-2 pt-1.5 border-t border-slate-200 mt-1.5">
+                        <button onclick="saveEditTask(${task.id})" class="text-[10px] font-bold text-emerald-600 hover:text-emerald-800 flex items-center transition-colors">
+                            <svg class="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            Kaydet
+                        </button>
+                        <button onclick="cancelEditTask()" class="text-[10px] font-bold text-slate-500 hover:text-slate-700 flex items-center transition-colors">
+                            <svg class="w-3 h-3 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            İptal
+                        </button>
+                    </div>
+                </div>
             `;
-            tbody.insertAdjacentHTML('beforeend', rowHtml);
+            appendCardToColumn(task.status, cardHtml);
         } else {
-            // Normal Row
-            const rowHtml = `
-                <tr class="hover:bg-slate-50/50 transition-colors">
-                    <td class="py-3 px-2 font-medium text-slate-800">${task.title}</td>
-                    <td class="py-3 px-2 text-center font-bold text-slate-600">${task.storyPoint}</td>
-                    <td class="py-3 px-2">
-                        <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass}">${targetName}</span>
-                    </td>
-                    <td class="py-3 px-2">
-                        <select onchange="updateTaskStatus(${task.id}, this.value)" class="text-xs border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white">
-                            <option value="TODO" ${statusVal === 'TODO' ? 'selected' : ''}>TODO</option>
-                            <option value="IN_PROGRESS" ${statusVal === 'IN_PROGRESS' ? 'selected' : ''}>IN_PROGRESS</option>
-                            <option value="DONE" ${statusVal === 'DONE' ? 'selected' : ''}>DONE</option>
-                        </select>
-                    </td>
-                    <td class="py-3 px-2 text-right whitespace-nowrap">
-                        <button onclick="startEditTask(${task.id})" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors mr-2.5">Düzenle</button>
-                        <button onclick="deleteTask(${task.id})" class="text-xs font-semibold text-red-600 hover:text-red-800 transition-colors">Sil</button>
-                    </td>
-                </tr>
+            // Normal Card (Draggable, Compact)
+            const cardHtml = `
+                <div id="task-card-${task.id}" draggable="true" ondragstart="handleDragStart(event, ${task.id})" class="bg-white rounded-xl border border-slate-200/80 p-3 shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all relative group flex flex-col justify-between">
+                    <div class="flex justify-between items-start gap-2 mb-2">
+                        <h5 class="font-outfit font-semibold text-xs text-slate-800 leading-tight flex-1">${task.title}</h5>
+                        <span class="text-[9px] font-extrabold text-slate-600 bg-slate-50 border border-slate-200/60 px-1.5 py-0.5 rounded shrink-0 shadow-sm whitespace-nowrap">${task.storyPoint} SP</span>
+                    </div>
+                    <div class="flex justify-between items-center pt-2 border-t border-slate-100 mt-2">
+                        <span class="inline-block px-1.5 py-0.5 rounded text-[8px] font-medium ${colorClass} max-w-[110px] truncate" title="${targetName}">${targetName}</span>
+                        <div class="flex items-center space-x-2.5">
+                            <button onclick="startEditTask(${task.id})" class="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center transition-colors">
+                                <svg class="w-2.5 h-2.5 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                Düzenle
+                            </button>
+                            <button onclick="deleteTask(${task.id})" class="text-[9px] font-bold text-red-600 hover:text-red-800 flex items-center transition-colors">
+                                <svg class="w-2.5 h-2.5 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                Sil
+                            </button>
+                        </div>
+                    </div>
+                </div>
             `;
-            tbody.insertAdjacentHTML('beforeend', rowHtml);
+            appendCardToColumn(task.status, cardHtml);
         }
     });
 }
@@ -1158,3 +1207,28 @@ function updateAlignmentChart(targetStatuses) {
         }
     });
 }
+
+function allowDrop(e) {
+    e.preventDefault();
+}
+
+function handleDragStart(e, taskId) {
+    e.dataTransfer.setData("text/plain", taskId);
+}
+
+async function handleDrop(e, newStatus) {
+    e.preventDefault();
+    const taskIdStr = e.dataTransfer.getData("text/plain");
+    if (!taskIdStr) return;
+    const taskId = parseInt(taskIdStr);
+
+    const task = localTasks.find(t => t.id === taskId);
+    if (task && task.status === newStatus) return;
+
+    await updateTaskStatus(taskId, newStatus);
+}
+
+window.allowDrop = allowDrop;
+window.handleDragStart = handleDragStart;
+window.handleDrop = handleDrop;
+

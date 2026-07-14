@@ -55,7 +55,7 @@
     <!-- Main Content Wrapper -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-        <!-- Top Summary Cards & KPI Score Card -->
+        <!-- ROW 1: Welcome & High-Level KPIs -->
         <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- Left Overview info -->
             <div class="bg-gradient-to-br from-indigo-950 to-slate-900 rounded-2xl p-6 text-white shadow-xl md:col-span-2 flex flex-col justify-between">
@@ -118,205 +118,230 @@
             </div>
         </section>
 
-        <!-- Middle Comparison Area: Progress Bars comparing Target vs Actual -->
-        <section class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-            <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6">
+        <!-- ROW 2: Analytics & What-if Simulation -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left: Comparison Card (col-span-8) -->
+            <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between">
                 <div>
-                    <h3 class="font-outfit font-bold text-xl text-slate-900">Stratejik Hedef vs. Gerçekleşen Efor Dağılımı</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Tanımlanmış OKR/KPI hedefleri ile gerçekleşen görev dağılımlarının (Story Point) kıyaslanması</p>
-                </div>
-                <div class="mt-2 sm:mt-0 flex flex-wrap gap-3 items-center text-xs">
-                    <div class="flex items-center space-x-1.5">
-                        <span class="w-3 h-3 rounded bg-indigo-500"></span>
-                        <span class="font-medium text-slate-600">Hedef %</span>
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-6">
+                        <div>
+                            <h3 class="font-outfit font-bold text-lg text-slate-900">Stratejik Hedef vs. Gerçekleşen Efor Dağılımı</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">OKR hedefleri ile gerçekleşen görev dağılımlarının kıyaslanması</p>
+                        </div>
+                        <div class="mt-2 sm:mt-0 flex flex-wrap gap-3 items-center text-[10px]">
+                            <div class="flex items-center space-x-1">
+                                <span class="w-2.5 h-2.5 rounded bg-indigo-500"></span>
+                                <span class="font-medium text-slate-600">Hedef %</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <span class="w-2.5 h-2.5 rounded bg-red-400" id="legend-planned-color"></span>
+                                <span class="font-medium text-slate-600">Planlanan %</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <span class="w-2.5 h-2.5 rounded bg-emerald-400" id="legend-completed-color"></span>
+                                <span class="font-medium text-slate-600">Tamamlanan %</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-1.5">
-                        <span class="w-3 h-3 rounded bg-red-400" id="legend-planned-color"></span>
-                        <span class="font-medium text-slate-600">Planlanan %</span>
-                    </div>
-                    <div class="flex items-center space-x-1.5">
-                        <span class="w-3 h-3 rounded bg-emerald-400" id="legend-completed-color"></span>
-                        <span class="font-medium text-slate-600">Tamamlanan %</span>
+
+                    <div class="space-y-6">
+                        <!-- Top: Progress Bars (Full Width) -->
+                        <div id="objectives-container" class="w-full space-y-5">
+                            <div class="text-center text-slate-400 py-8">Hedef efor dağılımı yükleniyor...</div>
+                        </div>
+                        <!-- Bottom: Chart.js Graph (Below, Compact & Centered) -->
+                        <div class="bg-slate-50/50 rounded-xl p-5 border border-slate-100/85 flex items-center justify-center min-h-[220px] w-full">
+                            <div class="w-full max-w-[420px] relative">
+                                <canvas id="alignmentChart"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Two-column comparison grid: Sol barlar, sağ interaktif grafik -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                <!-- Sol Sütun: Progress barlar -->
-                <div id="objectives-container" class="lg:col-span-7 space-y-6">
-                    <!-- Will be loaded dynamically from API -->
-                    <div class="text-center text-slate-400 py-8">Hedef efor dağılımı yükleniyor...</div>
+            <!-- Right: What-if Simulator Card (col-span-4) -->
+            <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-outfit font-bold text-lg text-slate-900">What-if Senaryo Simülatörü</h3>
+                        <span class="px-2 py-0.5 rounded bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wider">
+                            Simülasyon
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-6">
+                        Stratejik OKR hedeflerini kaydırarak efor dağılımlarını değiştirebilir ve genel uyum skoruna etkisini canlı simüle edebilirsiniz.
+                    </p>
+
+                    <!-- Simulation Sliders -->
+                    <div id="sliders-container" class="space-y-5">
+                        <div class="text-center text-slate-400 py-6">Kaydırıcılar yükleniyor...</div>
+                    </div>
+
+                    <!-- Warnings / Notes -->
+                    <div class="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-500 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span>Hedeflerin Toplamı:</span>
+                            <span class="font-bold text-slate-700" id="total-val">100%</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 leading-normal">
+                            Not: Stratejik hedeflerin toplamı tam olarak %100 olmalıdır.
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Sağ Sütun: Chart.js Grafik -->
-                <div class="lg:col-span-5 bg-slate-50/50 rounded-2xl p-6 border border-slate-100/80 flex flex-col justify-between">
-                    <div class="w-full relative min-h-[300px]">
-                        <canvas id="alignmentChart"></canvas>
+                <div class="mt-6 pt-4 border-t border-slate-100 flex space-x-3">
+                    <button id="reset-sim" class="flex-1 py-2 px-3 border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-xs rounded-xl transition-colors">
+                        Simülasyonu Sıfırla
+                    </button>
+                    <button id="save-sim" class="flex-1 py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 font-semibold text-xs rounded-xl transition-colors">
+                        Backend'e Kaydet
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ROW 3: Operational Kanban Board -->
+        <section class="animate-fade-in">
+            <!-- Task List Card -->
+            <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm w-full overflow-hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="font-outfit font-bold text-lg text-slate-900">Operasyonel Görev Listesi (Kanban)</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Görevleri drag-drop yöntemiyle sütunlar arasında taşıyarak efor dağılımlarını anlık güncelleyebilirsiniz.</p>
+                    </div>
+                    <span id="tasks-count" class="px-2.5 py-1 rounded bg-slate-100 text-slate-500 text-xs font-medium shrink-0">- Görev</span>
+                </div>
+
+                <!-- Arama ve Filtreleme Paneli -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <!-- Search Box -->
+                    <div class="relative">
+                        <input type="text" id="task-search" placeholder="Görev ara..." class="w-full text-xs border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50">
+                        <!-- Search Icon (Inline SVG) -->
+                        <div class="absolute left-3 top-3 text-slate-400">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- Target Filter Dropdown -->
+                    <div>
+                        <select id="task-filter-target" class="w-full text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white text-slate-600">
+                            <option value="">Tüm Hedefler</option>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Kanban Board (Horizontal Scrolling Container) -->
+                <div class="flex overflow-x-auto gap-6 mt-4 pb-4 w-full scrollbar-thin scrollbar-thumb-slate-200">
+                    <!-- TODO Column -->
+                    <div class="flex-1 min-w-[290px] sm:min-w-[320px] bg-slate-50 rounded-xl p-4 border border-slate-200/60 min-h-[450px] flex flex-col" id="kanban-col-todo" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'TODO')">
+                        <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-200/80">
+                            <span class="font-outfit font-bold text-sm text-slate-700 flex items-center">
+                                <span class="w-2 h-2 rounded-full bg-slate-400 mr-2"></span>To Do
+                            </span>
+                            <span class="bg-slate-200/60 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full" id="count-todo">0</span>
+                        </div>
+                        <div class="space-y-3 flex-1 overflow-y-auto max-h-[500px]" id="tasks-todo">
+                            <!-- Cards inserted dynamically -->
+                            <div class="text-center text-slate-400 py-6 text-xs">Yükleniyor...</div>
+                        </div>
+                    </div>
+
+                    <!-- IN_PROGRESS Column -->
+                    <div class="flex-1 min-w-[290px] sm:min-w-[320px] bg-indigo-50/20 rounded-xl p-4 border border-indigo-100/60 min-h-[450px] flex flex-col" id="kanban-col-inprogress" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'IN_PROGRESS')">
+                        <div class="flex items-center justify-between mb-4 pb-2 border-b border-indigo-100/40">
+                            <span class="font-outfit font-bold text-sm text-indigo-800 flex items-center">
+                                <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2"></span>In Progress
+                            </span>
+                            <span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full" id="count-inprogress">0</span>
+                        </div>
+                        <div class="space-y-3 flex-1 overflow-y-auto max-h-[500px]" id="tasks-inprogress">
+                            <!-- Cards inserted dynamically -->
+                            <div class="text-center text-slate-400 py-6 text-xs">Yükleniyor...</div>
+                        </div>
+                    </div>
+
+                    <!-- DONE Column -->
+                    <div class="flex-1 min-w-[290px] sm:min-w-[320px] bg-emerald-50/20 rounded-xl p-4 border border-emerald-100/60 min-h-[450px] flex flex-col" id="kanban-col-done" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'DONE')">
+                        <div class="flex items-center justify-between mb-4 pb-2 border-b border-emerald-100/40">
+                            <span class="font-outfit font-bold text-sm text-emerald-800 flex items-center">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2"></span>Done
+                            </span>
+                            <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full" id="count-done">0</span>
+                        </div>
+                        <div class="space-y-3 flex-1 overflow-y-auto max-h-[500px]" id="tasks-done">
+                            <!-- Cards inserted dynamically -->
+                            <div class="text-center text-slate-400 py-6 text-xs">Yükleniyor...</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Bottom Layout: Two Columns (Task management & Simulation) -->
-        <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-            <!-- Left Column: Dummy Task Add Form & Task List Table (Col Span: 7) -->
-            <div class="lg:col-span-7 space-y-6">
-                <!-- Task Addition Card -->
-                <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-                    <h3 class="font-outfit font-bold text-lg text-slate-900 mb-4">Yeni Dummy Görev Ekle</h3>
-                    <form id="task-form" class="space-y-4">
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <!-- Task Name -->
-                            <div class="sm:col-span-2">
-                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Görev Başlığı</label>
-                                <input type="text" id="task-title" required placeholder="Örn: OIDC giriş akışını uygula" class="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-                            </div>
-                            <!-- Story Point -->
-                            <div>
-                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Story Point (Efor - SP)</label>
-                                <input type="number" id="task-story-point" required min="1" placeholder="Örn: 5" class="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-                            </div>
+        <!-- ROW 4: Settings & Admin panels -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Left: Dummy Task Add Form -->
+            <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                <h3 class="font-outfit font-bold text-lg text-slate-900 mb-2">Yeni Dummy Görev Ekle</h3>
+                <p class="text-xs text-slate-500 mb-4">Sürükle-bırak panosuna yerleşecek örnek bir görev tanımlayın.</p>
+                
+                <form id="task-form" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <!-- Task Name -->
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Görev Başlığı</label>
+                            <input type="text" id="task-title" required placeholder="Örn: OIDC giriş akışını uygula" class="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/30">
                         </div>
-
-                        <!-- Objective Dropdown -->
+                        <!-- Story Point -->
                         <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Stratejik OKR Hedefi</label>
-                            <select id="task-target-select" required class="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white">
-                                <option value="" disabled selected>Hedef seçin...</option>
-                                <!-- Populated dynamically -->
-                            </select>
-                        </div>
-
-                        <button type="submit" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/25 transition-all">
-                            Görevi Backlog'a Ekle
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Task List Card -->
-                <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-outfit font-bold text-lg text-slate-900">Operasyonel Görev Listesi (Backlog)</h3>
-                        <span id="tasks-count" class="px-2 py-0.5 rounded bg-slate-100 text-slate-500 text-xs font-medium">- Görev</span>
-                    </div>
-
-                    <!-- Arama ve Filtreleme Paneli -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                        <!-- Search Box -->
-                        <div class="relative">
-                            <input type="text" id="task-search" placeholder="Görev ara..." class="w-full text-xs border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/50">
-                            <!-- Search Icon (Inline SVG) -->
-                            <div class="absolute left-3 top-3 text-slate-400">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <!-- Target Filter Dropdown -->
-                        <div>
-                            <select id="task-filter-target" class="w-full text-xs border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white text-slate-600">
-                                <option value="">Tüm Hedefler</option>
-                                <!-- Populated dynamically -->
-                            </select>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Story Point (SP)</label>
+                            <input type="number" id="task-story-point" required min="1" placeholder="Örn: 5" class="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/30">
                         </div>
                     </div>
 
-                    <!-- Tasks Table -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left text-sm text-slate-700">
-                            <thead>
-                                <tr class="border-b border-slate-100 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                                    <th class="py-3 px-2">Görev Başlığı</th>
-                                    <th class="py-3 px-2 text-center">Efor (SP)</th>
-                                    <th class="py-3 px-2">Bağlı Stratejik Hedef</th>
-                                    <th class="py-3 px-2">Durum</th>
-                                    <th class="py-3 px-2 text-right">İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tasks-table-body" class="divide-y divide-slate-100">
-                                <!-- Will be loaded dynamically from API -->
-                                <tr>
-                                    <td colspan="5" class="text-center py-6 text-slate-400">Backlog yükleniyor...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column: Target Effort Simulation / What-if Analysis (Col Span: 5) -->
-            <div class="lg:col-span-5 space-y-6">
-                <!-- What-if Simulator Card (h-full removed so it stacks with management card) -->
-                <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between">
+                    <!-- Objective Dropdown -->
                     <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="font-outfit font-bold text-lg text-slate-900">What-if Senaryo Simülatörü</h3>
-                            <!-- Simulator Indicator -->
-                            <span class="px-2 py-0.5 rounded bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wider">
-                                Canlı Simülasyon
-                            </span>
-                        </div>
-                        <p class="text-xs text-slate-500 mb-6">
-                            Stratejik OKR hedeflerini kaydırarak efor dağılımlarını değiştirebilir ve genel uyum skoruna etkisini canlı simüle edebilirsiniz.
-                        </p>
-
-                        <!-- Simulation Sliders -->
-                        <div id="sliders-container" class="space-y-6">
-                            <!-- Will be loaded dynamically from API -->
-                            <div class="text-center text-slate-400 py-6">Kaydırıcılar yükleniyor...</div>
-                        </div>
-
-                        <!-- Warnings / Notes -->
-                        <div class="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-500 space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span>Hedeflerin Toplamı:</span>
-                                <span class="font-bold text-slate-700" id="total-val">100%</span>
-                            </div>
-                            <div class="text-[10px] text-slate-400 leading-normal">
-                                Not: Stratejik hedeflerin toplamı tam olarak %100 olmalıdır. Kaydırıcıları sürükleyerek farklı efor dağılımlarını anlık simüle edebilirsiniz.
-                            </div>
-                        </div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Stratejik OKR Hedefi</label>
+                        <select id="task-target-select" required class="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white text-slate-600">
+                            <option value="" disabled selected>Hedef seçin...</option>
+                            <!-- Populated dynamically -->
+                        </select>
                     </div>
 
-                    <div class="mt-8 pt-4 border-t border-slate-100 flex space-x-3">
-                        <button id="reset-sim" class="flex-1 py-2 px-4 border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-sm rounded-xl transition-colors">
-                            Simülasyonu Sıfırla
-                        </button>
-                        <button id="save-sim" class="flex-1 py-2 px-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 font-semibold text-sm rounded-xl transition-colors">
-                            Backend'e Kaydet
-                        </button>
+                    <button type="submit" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/25 transition-all">
+                        Görevi Backlog'a Ekle
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right: Target Objective Management Card -->
+            <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                <h3 class="font-outfit font-bold text-lg text-slate-900 mb-2">Stratejik Hedef Yönetimi</h3>
+                <p class="text-xs text-slate-500 mb-4">Yeni bir OKR hedefi tanımlayabilir veya mevcut hedefleri silebilirsiniz.</p>
+                
+                <!-- Add Target Form -->
+                <form id="target-form" class="space-y-3 mb-6">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Yeni Hedef Adı</label>
+                        <div class="flex space-x-2">
+                            <input type="text" id="target-name" required placeholder="Örn: Operasyonel Mükemmellik" class="flex-1 text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-slate-50/30">
+                            <button type="submit" class="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl transition-colors shadow-lg shadow-indigo-600/10">
+                                Ekle
+                            </button>
+                        </div>
                     </div>
-                </div>
+                </form>
 
-                <!-- Target Management Card -->
-                <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-                    <h3 class="font-outfit font-bold text-lg text-slate-900 mb-4">Stratejik Hedef Yönetimi</h3>
-                    
-                    <!-- Add Target Form -->
-                    <form id="target-form" class="space-y-3 mb-6">
-                        <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Yeni Hedef Adı</label>
-                            <div class="flex space-x-2">
-                                <input type="text" id="target-name" required placeholder="Örn: Operasyonel Mükemmellik" class="flex-1 text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-                                <button type="submit" class="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl transition-colors shadow-lg shadow-indigo-600/10">
-                                    Ekle
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-
-                    <!-- Target List -->
-                    <div class="space-y-3">
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Mevcut Hedefler</label>
-                        <div id="targets-list-container" class="divide-y divide-slate-100 max-h-60 overflow-y-auto pr-1">
-                            <div class="text-center text-slate-400 py-4 text-xs">Hedefler yükleniyor...</div>
-                        </div>
+                <!-- Target List -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Mevcut Hedefler</label>
+                    <div id="targets-list-container" class="divide-y divide-slate-100 max-h-52 overflow-y-auto pr-1">
+                        <div class="text-center text-slate-400 py-4 text-xs">Hedefler yükleniyor...</div>
                     </div>
                 </div>
             </div>
-
         </section>
 
     </main>

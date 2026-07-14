@@ -27,8 +27,9 @@ public class AlignmentService {
         List<StrategicTarget> targets = targetRepository.findAll();
         List<Task> tasks = taskRepository.findAll();
 
-        // Planned actual calculations (all tasks)
+        // Planned actual calculations (IN_PROGRESS and DONE tasks only)
         int totalStoryPoints = tasks.stream()
+                .filter(t -> !TaskStatus.TODO.equals(t.getStatus()))
                 .mapToInt(Task::getStoryPoint)
                 .sum();
 
@@ -45,9 +46,9 @@ public class AlignmentService {
         boolean isCompletedMisaligned = false;
 
         for (StrategicTarget target : targets) {
-            // Planned story points for this target
+            // Planned story points for this target (excluding TODO tasks)
             int targetStoryPoints = tasks.stream()
-                    .filter(t -> target.getId().equals(t.getStrategicTargetId()))
+                    .filter(t -> target.getId().equals(t.getStrategicTargetId()) && !TaskStatus.TODO.equals(t.getStatus()))
                     .mapToInt(Task::getStoryPoint)
                     .sum();
 
@@ -99,9 +100,9 @@ public class AlignmentService {
             }
         }
 
-        // Planned alignment score
+        // Planned alignment score (defaults to 100 if no active tasks exist)
         int alignmentScore = 100;
-        if (!targetStatuses.isEmpty()) {
+        if (!targetStatuses.isEmpty() && totalStoryPoints > 0) {
             alignmentScore = (int) Math.round(100.0 - (totalAbsoluteGap / 2.0));
             alignmentScore = Math.max(0, Math.min(100, alignmentScore));
         }

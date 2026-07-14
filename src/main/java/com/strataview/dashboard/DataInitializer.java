@@ -3,6 +3,7 @@ package com.strataview.dashboard;
 import com.strataview.dashboard.dto.DashboardDTO;
 import com.strataview.dashboard.model.StrategicTarget;
 import com.strataview.dashboard.model.Task;
+import com.strataview.dashboard.model.TaskStatus;
 import com.strataview.dashboard.repository.StrategicTargetRepository;
 import com.strataview.dashboard.repository.TaskRepository;
 import com.strataview.dashboard.service.AlignmentService;
@@ -39,12 +40,12 @@ public class DataInitializer implements CommandLineRunner {
             StrategicTarget target3 = targetRepository.save(new StrategicTarget("Kurumsal 5G Yayılımı", 40.0));
 
             // Save tasks linked to target IDs
-            taskRepository.save(new Task("Giriş ekranı zaman aşımı hatasını düzelt", 5, target1.getId()));
-            taskRepository.save(new Task("Veritabanı bağlantı havuzunu (pooling) yeniden yapılandır", 13, target2.getId()));
-            taskRepository.save(new Task("Spring Boot ve çekirdek kütüphaneleri yükselt", 8, target2.getId()));
-            taskRepository.save(new Task("Eski bildirim mikro servisini yeniden yaz", 13, target2.getId()));
-            taskRepository.save(new Task("5G onboarding dokümantasyonunu taslak haline getir", 3, target3.getId()));
-            taskRepository.save(new Task("API yanıt sürelerini optimize et", 5, target1.getId()));
+            taskRepository.save(new Task("Giriş ekranı zaman aşımı hatasını düzelt", 5, target1.getId(), TaskStatus.DONE));
+            taskRepository.save(new Task("Veritabanı bağlantı havuzunu (pooling) yeniden yapılandır", 13, target2.getId(), TaskStatus.IN_PROGRESS));
+            taskRepository.save(new Task("Spring Boot ve çekirdek kütüphaneleri yükselt", 8, target2.getId(), TaskStatus.TODO));
+            taskRepository.save(new Task("Eski bildirim mikro servisini yeniden yaz", 13, target2.getId(), TaskStatus.TODO));
+            taskRepository.save(new Task("5G onboarding dokümantasyonunu taslak haline getir", 3, target3.getId(), TaskStatus.DONE));
+            taskRepository.save(new Task("API yanıt sürelerini optimize et", 5, target1.getId(), TaskStatus.TODO));
 
             logger.info("Demo verileri başarıyla yüklendi.");
         } else {
