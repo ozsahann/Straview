@@ -457,7 +457,8 @@ function formatDateTR(dateStr) {
 }
 
 function getSprintLabel(s) {
-    let label = s.name;
+    if (!s) return 'Bilinmeyen Sprint';
+    let label = s.name || 'İsimsiz Sprint';
     if (s.startDate && s.endDate) {
         label += ` (${formatDateTR(s.startDate)} - ${formatDateTR(s.endDate)})`;
     }
