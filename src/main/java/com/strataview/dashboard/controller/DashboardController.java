@@ -5,6 +5,7 @@ import com.strataview.dashboard.service.AlignmentService;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -19,7 +20,7 @@ public class DashboardController {
     }
 
     @GetMapping
-    public DashboardDTO getDashboardData() {
-        return alignmentService.calculateAlignment();
+    public DashboardDTO getDashboardData(@RequestParam(required = false) Long sprintId) {
+        return alignmentService.calculateAlignment(sprintId);
     }
 }

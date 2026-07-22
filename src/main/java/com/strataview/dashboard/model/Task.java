@@ -22,6 +22,8 @@ public class Task {
 
     private Long strategicTargetId;
 
+    private Long sprintId;
+
     @Enumerated(EnumType.STRING)
     private TaskStatus status = TaskStatus.TODO;
 
@@ -39,6 +41,14 @@ public class Task {
         this.title = title;
         this.storyPoint = storyPoint;
         this.strategicTargetId = strategicTargetId;
+        this.status = status != null ? status : TaskStatus.TODO;
+    }
+
+    public Task(String title, Integer storyPoint, Long strategicTargetId, Long sprintId, TaskStatus status) {
+        this.title = title;
+        this.storyPoint = storyPoint;
+        this.strategicTargetId = strategicTargetId;
+        this.sprintId = sprintId;
         this.status = status != null ? status : TaskStatus.TODO;
     }
 
@@ -72,6 +82,14 @@ public class Task {
 
     public void setStrategicTargetId(Long strategicTargetId) {
         this.strategicTargetId = strategicTargetId;
+    }
+
+    public Long getSprintId() {
+        return sprintId;
+    }
+
+    public void setSprintId(Long sprintId) {
+        this.sprintId = sprintId;
     }
 
     public TaskStatus getStatus() {

@@ -45,9 +45,27 @@
                     <p class="text-xs text-slate-400">Stratejik Hizalama ve KPI Gösterge Paneli</p>
                 </div>
             </div>
-            <div id="backend-status-badge" class="flex items-center space-x-2 text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-full text-slate-300">
-                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-                <span>Bağlantı Kontrol Ediliyor...</span>
+            
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Header Sprint Selector -->
+                <div class="flex items-center space-x-2 bg-slate-800/90 border border-slate-700/80 rounded-xl px-3 py-1.5 shadow-inner">
+                    <label for="header-sprint-select" class="text-xs font-semibold text-indigo-300 flex items-center gap-1.5 shrink-0">
+                        <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        Dönem:
+                    </label>
+                    <select id="header-sprint-select" class="bg-slate-900 border border-slate-700 text-white text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium cursor-pointer">
+                        <option value="">Tüm Zaman Dönemleri</option>
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+
+                <!-- Backend Status Badge -->
+                <div id="backend-status-badge" class="flex items-center space-x-2 text-xs bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-full text-slate-300">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span>Bağlantı Kontrol Ediliyor...</span>
+                </div>
             </div>
         </div>
     </header>
@@ -66,10 +84,16 @@
                         Strataview, geliştirici görevlerini ve story point'lerini doğrudan üst düzey stratejik hedeflere (OKR) eşler. Uyumsuzlukları erkenden tespit etmenizi, kaynakları dinamik olarak kaydırmanızı ve mühendislik hızını iş değeriyle dengelemenizi sağlar.
                     </p>
                 </div>
-                <div class="mt-6 flex items-center space-x-4 border-t border-indigo-900/50 pt-4 text-xs text-indigo-200">
+                <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-indigo-900/50 pt-4 text-xs text-indigo-200">
                     <div>Toplam Görev: <span id="total-tasks" class="font-bold text-white text-sm">-</span></div>
-                    <div class="w-1.5 h-1.5 rounded-full bg-indigo-800"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-indigo-800 hidden sm:block"></div>
                     <div>Toplam Efor: <span id="total-story-points" class="font-bold text-white text-sm">-</span></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-indigo-800 hidden sm:block"></div>
+                    <!-- Selected Sprint Date Range Pill -->
+                    <div class="flex items-center space-x-1.5 bg-indigo-900/70 border border-indigo-700/60 px-3 py-1 rounded-lg text-indigo-100 font-medium">
+                        <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span>Dönem Tarihi: <span id="sprint-date-display" class="font-bold text-amber-300">Tüm Zamanlar</span></span>
+                    </div>
                 </div>
             </div>
 
@@ -301,13 +325,22 @@
                         </div>
                     </div>
 
-                    <!-- Objective Dropdown -->
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Stratejik OKR Hedefi</label>
-                        <select id="task-target-select" required class="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white text-slate-600">
-                            <option value="" disabled selected>Hedef seçin...</option>
-                            <!-- Populated dynamically -->
-                        </select>
+                    <!-- Objective & Sprint Dropdowns -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Stratejik OKR Hedefi</label>
+                            <select id="task-target-select" required class="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white text-slate-600">
+                                <option value="" disabled selected>Hedef seçin...</option>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Sprint / Dönem</label>
+                            <select id="task-sprint-select" required class="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white text-slate-600">
+                                <option value="" disabled selected>Sprint seçin...</option>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
                     </div>
 
                     <button type="submit" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/25 transition-all">

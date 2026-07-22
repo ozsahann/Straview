@@ -1,5 +1,7 @@
 package com.strataview.dashboard.dto;
 
+import com.strataview.dashboard.model.Sprint;
+
 import java.util.List;
 
 public class DashboardDTO {
@@ -9,6 +11,7 @@ public class DashboardDTO {
     private int completedAlignmentScore;
     private String completedStatus;
     private List<TargetStatusDTO> targetStatuses;
+    private List<Sprint> sprints;
 
     public DashboardDTO() {
     }
@@ -19,6 +22,15 @@ public class DashboardDTO {
         this.completedAlignmentScore = completedAlignmentScore;
         this.completedStatus = completedStatus;
         this.targetStatuses = targetStatuses;
+    }
+
+    public DashboardDTO(int alignmentScore, String status, int completedAlignmentScore, String completedStatus, List<TargetStatusDTO> targetStatuses, List<Sprint> sprints) {
+        this.alignmentScore = alignmentScore;
+        this.status = status;
+        this.completedAlignmentScore = completedAlignmentScore;
+        this.completedStatus = completedStatus;
+        this.targetStatuses = targetStatuses;
+        this.sprints = sprints;
     }
 
     public int getAlignmentScore() {
@@ -59,6 +71,14 @@ public class DashboardDTO {
 
     public void setTargetStatuses(List<TargetStatusDTO> targetStatuses) {
         this.targetStatuses = targetStatuses;
+    }
+
+    public List<Sprint> getSprints() {
+        return sprints;
+    }
+
+    public void setSprints(List<Sprint> sprints) {
+        this.sprints = sprints;
     }
 
     public static class TargetStatusDTO {

@@ -2,30 +2,52 @@ package com.strataview.dashboard.service;
 
 import com.strataview.dashboard.dto.DashboardDTO;
 import com.strataview.dashboard.dto.DashboardDTO.TargetStatusDTO;
+import com.strataview.dashboard.model.Sprint;
 import com.strataview.dashboard.model.StrategicTarget;
 import com.strataview.dashboard.model.Task;
 import com.strataview.dashboard.model.TaskStatus;
+import com.strataview.dashboard.repository.SprintRepository;
 import com.strataview.dashboard.repository.StrategicTargetRepository;
 import com.strataview.dashboard.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AlignmentService {
 
     private final StrategicTargetRepository targetRepository;
     private final TaskRepository taskRepository;
+    private final SprintRepository sprintRepository;
 
-    public AlignmentService(StrategicTargetRepository targetRepository, TaskRepository taskRepository) {
+    public AlignmentService(StrategicTargetRepository targetRepository,
+                            TaskRepository taskRepository,
+                            SprintRepository sprintRepository) {
         this.targetRepository = targetRepository;
         this.taskRepository = taskRepository;
+        this.sprintRepository = sprintRepository;
     }
 
     public DashboardDTO calculateAlignment() {
+        return calculateAlignment(null);
+    }
+
+    public DashboardDTO calculateAlignment(Long sprintId) {
         List<StrategicTarget> targets = targetRepository.findAll();
-        List<Task> tasks = taskRepository.findAll();
+        List<Task> allTasks = taskRepository.findAll();
+        List<Sprint> sprints = sprintRepository.findAll();
+
+        // Filter tasks by sprintId if provided
+        List<Task> tasks;
+        if (sprintId != null && sprintId > 0) {
+            tasks = allTasks.stream()
+                    .filter(t -> sprintId.equals(t.getSprintId()))
+                    .collect(Collectors.toList());
+        } else {
+            tasks = allTasks;
+        }
 
         // Planned actual calculations (IN_PROGRESS and DONE tasks only)
         int totalStoryPoints = tasks.stream()
@@ -117,6 +139,6 @@ public class AlignmentService {
         String status = isMisaligned ? "Misaligned" : "Aligned";
         String completedStatus = isCompletedMisaligned ? "Misaligned" : "Aligned";
 
-        return new DashboardDTO(alignmentScore, status, completedAlignmentScore, completedStatus, targetStatuses);
+        return new DashboardDTO(alignmentScore, status, completedAlignmentScore, completedStatus, targetStatuses, sprints);
     }
 }

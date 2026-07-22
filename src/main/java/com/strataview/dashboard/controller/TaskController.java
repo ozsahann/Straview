@@ -57,6 +57,9 @@ public class TaskController {
                     if (updatedTask.getStrategicTargetId() != null) {
                         task.setStrategicTargetId(updatedTask.getStrategicTargetId());
                     }
+                    if (updatedTask.getSprintId() != null) {
+                        task.setSprintId(updatedTask.getSprintId());
+                    }
                     if (updatedTask.getStatus() != null) {
                         task.setStatus(updatedTask.getStatus());
                     }

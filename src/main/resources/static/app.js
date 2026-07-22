@@ -3,6 +3,7 @@ const BASE_URL = (window.location.protocol === 'file:') ? 'http://localhost:8080
 // LocalStorage Mock Database Keys
 const DB_TARGETS_KEY = 'strataview_targets';
 const DB_TASKS_KEY = 'strataview_tasks';
+const DB_SPRINTS_KEY = 'strataview_sprints';
 
 const defaultTargets = [
     { id: 1, name: "Müşteri Sadakatini Artırma", targetPercentage: 40.0 },
@@ -10,13 +11,19 @@ const defaultTargets = [
     { id: 3, name: "Kurumsal 5G Yayılımı", targetPercentage: 40.0 }
 ];
 
+const defaultSprints = [
+    { id: 1, name: "Sprint 1 (Tamamlanan)", startDate: "2026-06-01", endDate: "2026-06-15", active: false },
+    { id: 2, name: "Sprint 2 (Aktif)", startDate: "2026-06-16", endDate: "2026-06-30", active: true },
+    { id: 3, name: "Sprint 3 (Gelecek)", startDate: "2026-07-01", endDate: "2026-07-15", active: false }
+];
+
 const defaultTasks = [
-    { id: 1, title: "Giriş ekranı zaman aşımı hatasını düzelt", storyPoint: 5, strategicTargetId: 1, status: "DONE" },
-    { id: 2, title: "Veritabanı bağlantı havuzunu (pooling) yeniden yapılandır", storyPoint: 13, strategicTargetId: 2, status: "IN_PROGRESS" },
-    { id: 3, title: "Spring Boot ve çekirdek kütüphaneleri yükselt", storyPoint: 8, strategicTargetId: 2, status: "TODO" },
-    { id: 4, title: "Eski bildirim mikro servisini yeniden yaz", storyPoint: 13, strategicTargetId: 2, status: "TODO" },
-    { id: 5, title: "5G onboarding dokümantasyonunu taslak haline getir", storyPoint: 3, strategicTargetId: 3, status: "DONE" },
-    { id: 6, title: "API yanıt sürelerini optimize et", storyPoint: 5, strategicTargetId: 1, status: "TODO" }
+    { id: 1, title: "Giriş ekranı zaman aşımı hatasını düzelt", storyPoint: 5, strategicTargetId: 1, sprintId: 1, status: "DONE" },
+    { id: 2, title: "Veritabanı bağlantı havuzunu (pooling) yeniden yapılandır", storyPoint: 13, strategicTargetId: 2, sprintId: 2, status: "IN_PROGRESS" },
+    { id: 3, title: "Spring Boot ve çekirdek kütüphaneleri yükselt", storyPoint: 8, strategicTargetId: 2, sprintId: 3, status: "TODO" },
+    { id: 4, title: "Eski bildirim mikro servisini yeniden yaz", storyPoint: 13, strategicTargetId: 2, sprintId: 2, status: "TODO" },
+    { id: 5, title: "5G onboarding dokümantasyonunu taslak haline getir", storyPoint: 3, strategicTargetId: 3, sprintId: 1, status: "DONE" },
+    { id: 6, title: "API yanıt sürelerini optimize et", storyPoint: 5, strategicTargetId: 1, sprintId: 3, status: "TODO" }
 ];
 
 function initMockDb() {
@@ -25,6 +32,9 @@ function initMockDb() {
     }
     if (!localStorage.getItem(DB_TASKS_KEY)) {
         localStorage.setItem(DB_TASKS_KEY, JSON.stringify(defaultTasks));
+    }
+    if (!localStorage.getItem(DB_SPRINTS_KEY)) {
+        localStorage.setItem(DB_SPRINTS_KEY, JSON.stringify(defaultSprints));
     }
 }
 
@@ -46,9 +56,22 @@ function saveMockTasks(tasks) {
     localStorage.setItem(DB_TASKS_KEY, JSON.stringify(tasks));
 }
 
-function calculateAlignmentLocal() {
+function getMockSprints() {
+    initMockDb();
+    return JSON.parse(localStorage.getItem(DB_SPRINTS_KEY));
+}
+
+function saveMockSprints(sprints) {
+    localStorage.setItem(DB_SPRINTS_KEY, JSON.stringify(sprints));
+}
+
+function calculateAlignmentLocal(sprintId) {
     const targets = getMockTargets();
-    const tasks = getMockTasks();
+    let tasks = getMockTasks();
+
+    if (sprintId && parseInt(sprintId) > 0) {
+        tasks = tasks.filter(t => t.sprintId === parseInt(sprintId));
+    }
 
     const totalStoryPoints = tasks
         .filter(t => t.status !== 'TODO')
@@ -131,12 +154,15 @@ function calculateAlignmentLocal() {
         status: status,
         completedAlignmentScore: completedAlignmentScore,
         completedStatus: completedStatus,
-        targetStatuses: targetStatuses
+        targetStatuses: targetStatuses,
+        sprints: getMockSprints()
     };
 }
 
 let localTargets = [];
 let localTasks = [];
+let localSprints = [];
+let selectedSprintId = null;
 let currentDashboard = null;
 let useBackend = false;
 let alignmentChartInstance = null;
@@ -183,8 +209,13 @@ async function checkBackendConnection() {
     }
 }
 
-async function loadInitialData() {
+async function loadInitialData(sprintId = selectedSprintId) {
     try {
+        let dashUrl = BASE_URL + '/api/dashboard';
+        if (sprintId) {
+            dashUrl += `?sprintId=${sprintId}`;
+        }
+
         if (useBackend) {
             const targetsRes = await fetch(BASE_URL + '/api/targets');
             localTargets = await targetsRes.json();
@@ -192,16 +223,33 @@ async function loadInitialData() {
             const tasksRes = await fetch(BASE_URL + '/api/tasks');
             localTasks = await tasksRes.json();
 
-            const dashRes = await fetch(BASE_URL + '/api/dashboard');
+            const dashRes = await fetch(dashUrl);
             currentDashboard = await dashRes.json();
+            localSprints = currentDashboard.sprints || [];
         } else {
             localTargets = getMockTargets();
             localTasks = getMockTasks();
-            currentDashboard = calculateAlignmentLocal();
+            localSprints = getMockSprints();
+            currentDashboard = calculateAlignmentLocal(sprintId);
+        }
+
+        // Default to active sprint on initial load if none selected
+        if (selectedSprintId === null && localSprints.length > 0) {
+            const activeSprint = localSprints.find(s => s.active);
+            if (activeSprint) {
+                selectedSprintId = activeSprint.id;
+                if (useBackend) {
+                    const dashRes = await fetch(BASE_URL + `/api/dashboard?sprintId=${selectedSprintId}`);
+                    currentDashboard = await dashRes.json();
+                } else {
+                    currentDashboard = calculateAlignmentLocal(selectedSprintId);
+                }
+            }
         }
 
         renderDashboard();
         populateTargetSelect();
+        populateSprintSelect();
         renderTasksTable();
         renderSliders();
         renderTargetsList();
@@ -233,8 +281,13 @@ function renderDashboard() {
     compScoreEl.innerText = `${currentDashboard.completedAlignmentScore}%`;
     compStatusEl.innerText = currentDashboard.completedStatus === 'Aligned' ? 'Uyumlu' : 'Uyumsuz';
     
-    const totalTasks = localTasks.length;
-    const totalPoints = localTasks.reduce((sum, t) => sum + t.storyPoint, 0);
+    // Relevant tasks depending on selected sprint
+    const relevantTasks = selectedSprintId 
+        ? localTasks.filter(t => t.sprintId === parseInt(selectedSprintId))
+        : localTasks;
+
+    const totalTasks = relevantTasks.length;
+    const totalPoints = relevantTasks.reduce((sum, t) => sum + t.storyPoint, 0);
     totalTasksEl.innerText = `${totalTasks} Aktif`;
     totalPointsEl.innerText = `${totalPoints} Story Point`;
 
@@ -370,6 +423,75 @@ function populateTargetSelect() {
     }
 }
 
+function formatDateTR(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}.${parts[1]}.${parts[0]}`;
+    }
+    return dateStr;
+}
+
+function getSprintLabel(s) {
+    let label = s.name;
+    if (s.startDate && s.endDate) {
+        label += ` (${formatDateTR(s.startDate)} - ${formatDateTR(s.endDate)})`;
+    }
+    if (s.active) {
+        label += ' ⭐ (Aktif)';
+    }
+    return label;
+}
+
+function populateSprintSelect() {
+    const headerSelect = document.getElementById('header-sprint-select');
+    if (headerSelect) {
+        headerSelect.innerHTML = '<option value="">Tüm Zaman Dönemleri</option>';
+        localSprints.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.innerText = getSprintLabel(s);
+            if (selectedSprintId && s.id === parseInt(selectedSprintId)) {
+                opt.selected = true;
+            }
+            headerSelect.appendChild(opt);
+        });
+    }
+
+    const taskSprintSelect = document.getElementById('task-sprint-select');
+    if (taskSprintSelect) {
+        taskSprintSelect.innerHTML = '<option value="" disabled>Sprint seçin...</option>';
+        localSprints.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.innerText = getSprintLabel(s);
+            if (selectedSprintId && s.id === parseInt(selectedSprintId)) {
+                opt.selected = true;
+            } else if (!selectedSprintId && s.active) {
+                opt.selected = true;
+            }
+            taskSprintSelect.appendChild(opt);
+        });
+    }
+
+    // Update Sprint Date Display Pill in Overview Card
+    const dateDisplayEl = document.getElementById('sprint-date-display');
+    if (dateDisplayEl) {
+        if (selectedSprintId) {
+            const currentSprint = localSprints.find(s => s.id === parseInt(selectedSprintId));
+            if (currentSprint && currentSprint.startDate && currentSprint.endDate) {
+                dateDisplayEl.innerText = `${formatDateTR(currentSprint.startDate)} – ${formatDateTR(currentSprint.endDate)}${currentSprint.active ? ' (Aktif)' : ''}`;
+            } else if (currentSprint) {
+                dateDisplayEl.innerText = currentSprint.name;
+            } else {
+                dateDisplayEl.innerText = "Tüm Zamanlar";
+            }
+        } else {
+            dateDisplayEl.innerText = "Tüm Zamanlar";
+        }
+    }
+}
+
 function renderTasksTable() {
     const todoCol = document.getElementById('tasks-todo');
     const inprogressCol = document.getElementById('tasks-inprogress');
@@ -382,9 +504,10 @@ function renderTasksTable() {
     doneCol.innerHTML = '';
 
     const filteredTasks = localTasks.filter(task => {
+        const matchesSprint = !selectedSprintId || task.sprintId === parseInt(selectedSprintId);
         const matchesSearch = task.title.toLowerCase().includes(filterSearchQuery.toLowerCase());
         const matchesTarget = filterTargetId === '' || task.strategicTargetId === parseInt(filterTargetId);
-        return matchesSearch && matchesTarget;
+        return matchesSprint && matchesSearch && matchesTarget;
     });
 
     let countTodo = 0;
@@ -414,9 +537,12 @@ function renderTasksTable() {
     if (countInprogress === 0) inprogressCol.innerHTML = '<div class="text-center text-slate-400 py-6 text-xs">Görev bulunmuyor.</div>';
     if (countDone === 0) doneCol.innerHTML = '<div class="text-center text-slate-400 py-6 text-xs">Görev bulunmuyor.</div>';
 
-    // Map targets by ID
+    // Map targets & sprints by ID
     const targetMap = {};
     localTargets.forEach(t => { targetMap[t.id] = t.name; });
+
+    const sprintMap = {};
+    localSprints.forEach(s => { sprintMap[s.id] = s.name; });
 
     const colors = [
         'bg-blue-50 text-blue-700 border border-blue-100', 
@@ -440,6 +566,7 @@ function renderTasksTable() {
 
     filteredTasks.forEach(task => {
         const targetName = targetMap[task.strategicTargetId] || "Bilinmeyen Hedef";
+        const sprintName = sprintMap[task.sprintId] || "Tüm Sprintler";
         const colorClass = colors[task.strategicTargetId % colors.length] || 'bg-slate-100 text-slate-700 border border-slate-200';
         const statusVal = task.status || 'TODO';
 
@@ -448,6 +575,11 @@ function renderTasksTable() {
             let targetOptions = '';
             localTargets.forEach(t => {
                 targetOptions += `<option value="${t.id}" ${t.id === task.strategicTargetId ? 'selected' : ''}>${t.name}</option>`;
+            });
+
+            let sprintOptions = '';
+            localSprints.forEach(s => {
+                sprintOptions += `<option value="${s.id}" ${s.id === task.sprintId ? 'selected' : ''}>${s.name}</option>`;
             });
 
             const cardHtml = `
@@ -470,11 +602,19 @@ function renderTasksTable() {
                             </select>
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-[8px] font-bold text-indigo-800 uppercase mb-0.5">Bağlı OKR Hedefi</label>
-                        <select id="edit-target-${task.id}" class="w-full text-xs border border-slate-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all text-slate-600">
-                            ${targetOptions}
-                        </select>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[8px] font-bold text-indigo-800 uppercase mb-0.5">OKR Hedefi</label>
+                            <select id="edit-target-${task.id}" class="w-full text-xs border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all text-slate-600">
+                                ${targetOptions}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[8px] font-bold text-indigo-800 uppercase mb-0.5">Sprint</label>
+                            <select id="edit-sprint-${task.id}" class="w-full text-xs border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white transition-all text-slate-600">
+                                ${sprintOptions}
+                            </select>
+                        </div>
                     </div>
                     <div class="flex justify-end space-x-2 pt-1.5 border-t border-slate-200 mt-1.5">
                         <button onclick="saveEditTask(${task.id})" class="text-[10px] font-bold text-emerald-600 hover:text-emerald-800 flex items-center transition-colors">
@@ -498,8 +638,11 @@ function renderTasksTable() {
                         <span class="text-[9px] font-extrabold text-slate-600 bg-slate-50 border border-slate-200/60 px-1.5 py-0.5 rounded shrink-0 shadow-sm whitespace-nowrap">${task.storyPoint} SP</span>
                     </div>
                     <div class="flex justify-between items-center pt-2 border-t border-slate-100 mt-2">
-                        <span class="inline-block px-1.5 py-0.5 rounded text-[8px] font-medium ${colorClass} max-w-[110px] truncate" title="${targetName}">${targetName}</span>
-                        <div class="flex items-center space-x-2.5">
+                        <div class="flex items-center space-x-1 overflow-hidden">
+                            <span class="inline-block px-1.5 py-0.5 rounded text-[8px] font-medium ${colorClass} max-w-[90px] truncate" title="${targetName}">${targetName}</span>
+                            <span class="inline-block px-1.5 py-0.5 rounded text-[8px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/80 max-w-[85px] truncate" title="${sprintName}">${sprintName}</span>
+                        </div>
+                        <div class="flex items-center space-x-2 shrink-0">
                             <button onclick="startEditTask(${task.id})" class="text-[9px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center transition-colors">
                                 <svg class="w-2.5 h-2.5 mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                 Düzenle
@@ -663,7 +806,11 @@ function runLocalSimulation() {
     }
 
     let completedAlignmentScore = 100;
-    const totalCompletedPoints = localTasks
+    const relevantTasks = selectedSprintId 
+        ? localTasks.filter(t => t.sprintId === parseInt(selectedSprintId))
+        : localTasks;
+
+    const totalCompletedPoints = relevantTasks
         .filter(t => t.status === 'DONE')
         .reduce((sum, t) => sum + t.storyPoint, 0);
 
@@ -725,19 +872,36 @@ function runLocalSimulation() {
 
 function setupEventListeners() {
     const form = document.getElementById('task-form');
-    form.addEventListener('submit', handleTaskSubmit);
+    if (form) {
+        form.addEventListener('submit', handleTaskSubmit);
+    }
 
     const targetForm = document.getElementById('target-form');
     if (targetForm) {
         targetForm.addEventListener('submit', handleTargetSubmit);
     }
 
-    document.getElementById('reset-sim').addEventListener('click', () => {
-        renderSliders();
-        renderDashboard();
-    });
+    const resetSimBtn = document.getElementById('reset-sim');
+    if (resetSimBtn) {
+        resetSimBtn.addEventListener('click', () => {
+            renderSliders();
+            renderDashboard();
+        });
+    }
 
-    document.getElementById('save-sim').addEventListener('click', applySimulationToBackend);
+    const saveSimBtn = document.getElementById('save-sim');
+    if (saveSimBtn) {
+        saveSimBtn.addEventListener('click', applySimulationToBackend);
+    }
+
+    const headerSprintSelect = document.getElementById('header-sprint-select');
+    if (headerSprintSelect) {
+        headerSprintSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            selectedSprintId = val ? parseInt(val) : null;
+            loadInitialData(selectedSprintId);
+        });
+    }
 
     const searchInput = document.getElementById('task-search');
     if (searchInput) {
@@ -761,6 +925,8 @@ async function handleTaskSubmit(e) {
     const title = document.getElementById('task-title').value;
     const storyPoint = parseInt(document.getElementById('task-story-point').value);
     const strategicTargetId = parseInt(document.getElementById('task-target-select').value);
+    const sprintSelect = document.getElementById('task-sprint-select');
+    const sprintId = sprintSelect && sprintSelect.value ? parseInt(sprintSelect.value) : null;
 
     if (!title || isNaN(storyPoint) || isNaN(strategicTargetId)) {
         alert("Lütfen tüm alanları doldurun.");
@@ -772,7 +938,7 @@ async function handleTaskSubmit(e) {
             const res = await fetch(BASE_URL + '/api/tasks', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, storyPoint, strategicTargetId, status: "TODO" })
+                body: JSON.stringify({ title, storyPoint, strategicTargetId, sprintId, status: "TODO" })
             });
             if (!res.ok) throw new Error("Backend error");
         } else {
@@ -783,6 +949,7 @@ async function handleTaskSubmit(e) {
                 title: title,
                 storyPoint: storyPoint,
                 strategicTargetId: strategicTargetId,
+                sprintId: sprintId,
                 status: "TODO"
             };
             tasks.push(newTask);
@@ -902,6 +1069,7 @@ async function saveEditTask(taskId) {
     const titleInput = document.getElementById(`edit-title-${taskId}`);
     const spInput = document.getElementById(`edit-sp-${taskId}`);
     const targetSelect = document.getElementById(`edit-target-${taskId}`);
+    const sprintSelect = document.getElementById(`edit-sprint-${taskId}`);
     const statusSelect = document.getElementById(`edit-status-${taskId}`);
 
     if (!titleInput || !spInput || !targetSelect || !statusSelect) return;
@@ -909,6 +1077,7 @@ async function saveEditTask(taskId) {
     const title = titleInput.value.trim();
     const storyPoint = parseInt(spInput.value);
     const strategicTargetId = parseInt(targetSelect.value);
+    const sprintId = sprintSelect && sprintSelect.value ? parseInt(sprintSelect.value) : null;
     const status = statusSelect.value;
 
     if (!title || isNaN(storyPoint) || isNaN(strategicTargetId)) {
@@ -921,7 +1090,7 @@ async function saveEditTask(taskId) {
             const res = await fetch(BASE_URL + `/api/tasks/${taskId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, storyPoint, strategicTargetId, status })
+                body: JSON.stringify({ title, storyPoint, strategicTargetId, sprintId, status })
             });
             if (!res.ok) throw new Error("Backend update failed");
         } else {
@@ -931,6 +1100,7 @@ async function saveEditTask(taskId) {
                 task.title = title;
                 task.storyPoint = storyPoint;
                 task.strategicTargetId = strategicTargetId;
+                task.sprintId = sprintId;
                 task.status = status;
                 saveMockTasks(tasks);
             }
@@ -1231,4 +1401,3 @@ async function handleDrop(e, newStatus) {
 window.allowDrop = allowDrop;
 window.handleDragStart = handleDragStart;
 window.handleDrop = handleDrop;
-
