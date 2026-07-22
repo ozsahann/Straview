@@ -413,13 +413,20 @@ function renderProgressBars(targetStatuses) {
 function populateTargetSelect() {
     const selectEl = document.getElementById('task-target-select');
     if (selectEl) {
-        selectEl.innerHTML = '<option value="" disabled selected>Hedef seçin...</option>';
+        const prevVal = selectEl.value;
+        selectEl.innerHTML = '<option value="" disabled>Hedef seçin...</option>';
         localTargets.forEach(target => {
             const opt = document.createElement('option');
-            opt.value = target.id;
+            opt.value = String(target.id);
             opt.innerText = target.name;
             selectEl.appendChild(opt);
         });
+
+        if (prevVal && localTargets.some(t => String(t.id) === prevVal)) {
+            selectEl.value = prevVal;
+        } else if (localTargets.length > 0) {
+            selectEl.value = String(localTargets[0].id);
+        }
     }
 
     const filterEl = document.getElementById('task-filter-target');
@@ -428,13 +435,15 @@ function populateTargetSelect() {
         filterEl.innerHTML = '<option value="">Tüm Hedefler</option>';
         localTargets.forEach(target => {
             const opt = document.createElement('option');
-            opt.value = target.id;
+            opt.value = String(target.id);
             opt.innerText = target.name;
-            if (String(target.id) === currentSelected) {
-                opt.selected = true;
-            }
             filterEl.appendChild(opt);
         });
+        if (currentSelected && localTargets.some(t => String(t.id) === currentSelected)) {
+            filterEl.value = currentSelected;
+        } else {
+            filterEl.value = "";
+        }
     }
 }
 
@@ -464,34 +473,39 @@ function populateSprintSelect() {
         headerSelect.innerHTML = '<option value="">Tüm Zaman Dönemleri</option>';
         localSprints.forEach(s => {
             const opt = document.createElement('option');
-            opt.value = s.id;
+            opt.value = String(s.id);
             opt.innerText = getSprintLabel(s);
-            if (selectedSprintId && s.id === parseInt(selectedSprintId)) {
-                opt.selected = true;
-            }
             headerSelect.appendChild(opt);
         });
+        if (selectedSprintId && localSprints.some(s => s.id === parseInt(selectedSprintId))) {
+            headerSelect.value = String(selectedSprintId);
+        } else {
+            headerSelect.value = "";
+        }
     }
 
     const taskSprintSelect = document.getElementById('task-sprint-select');
     if (taskSprintSelect) {
+        const prevVal = taskSprintSelect.value;
         taskSprintSelect.innerHTML = '<option value="" disabled>Sprint seçin...</option>';
-        let anySelected = false;
         localSprints.forEach(s => {
             const opt = document.createElement('option');
-            opt.value = s.id;
+            opt.value = String(s.id);
             opt.innerText = getSprintLabel(s);
-            if (selectedSprintId && s.id === parseInt(selectedSprintId)) {
-                opt.selected = true;
-                anySelected = true;
-            } else if (!selectedSprintId && s.active) {
-                opt.selected = true;
-                anySelected = true;
-            }
             taskSprintSelect.appendChild(opt);
         });
-        if (!anySelected && taskSprintSelect.options.length > 1) {
-            taskSprintSelect.options[1].selected = true;
+
+        if (prevVal && localSprints.some(s => String(s.id) === prevVal)) {
+            taskSprintSelect.value = prevVal;
+        } else if (selectedSprintId && localSprints.some(s => s.id === parseInt(selectedSprintId))) {
+            taskSprintSelect.value = String(selectedSprintId);
+        } else {
+            const activeSprint = localSprints.find(s => s.active);
+            if (activeSprint) {
+                taskSprintSelect.value = String(activeSprint.id);
+            } else if (localSprints.length > 0) {
+                taskSprintSelect.value = String(localSprints[0].id);
+            }
         }
     }
 
@@ -943,10 +957,14 @@ function setupEventListeners() {
 
 async function handleTaskSubmit(e) {
     e.preventDefault();
-    const title = document.getElementById('task-title').value;
-    const storyPoint = parseInt(document.getElementById('task-story-point').value);
-    const strategicTargetId = parseInt(document.getElementById('task-target-select').value);
+    const titleInput = document.getElementById('task-title');
+    const spInput = document.getElementById('task-story-point');
+    const targetSelect = document.getElementById('task-target-select');
     const sprintSelect = document.getElementById('task-sprint-select');
+
+    const title = titleInput ? titleInput.value.trim() : '';
+    const storyPoint = spInput ? parseInt(spInput.value) : NaN;
+    const strategicTargetId = targetSelect ? parseInt(targetSelect.value) : NaN;
     const sprintId = sprintSelect && sprintSelect.value ? parseInt(sprintSelect.value) : null;
 
     if (!title || isNaN(storyPoint) || isNaN(strategicTargetId)) {
@@ -977,7 +995,8 @@ async function handleTaskSubmit(e) {
             saveMockTasks(tasks);
         }
 
-        document.getElementById('task-form').reset();
+        if (titleInput) titleInput.value = '';
+        if (spInput) spInput.value = '';
         await loadInitialData();
     } catch (err) {
         console.error("Error creating task:", err);
