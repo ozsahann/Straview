@@ -23,7 +23,13 @@ const defaultTasks = [
     { id: 3, title: "Spring Boot ve çekirdek kütüphaneleri yükselt", storyPoint: 8, strategicTargetId: 2, sprintId: 3, status: "TODO" },
     { id: 4, title: "Eski bildirim mikro servisini yeniden yaz", storyPoint: 13, strategicTargetId: 2, sprintId: 2, status: "TODO" },
     { id: 5, title: "5G onboarding dokümantasyonunu taslak haline getir", storyPoint: 3, strategicTargetId: 3, sprintId: 1, status: "DONE" },
-    { id: 6, title: "API yanıt sürelerini optimize et", storyPoint: 5, strategicTargetId: 1, sprintId: 3, status: "TODO" }
+    { id: 6, title: "API yanıt sürelerini optimize et", storyPoint: 5, strategicTargetId: 1, sprintId: 3, status: "TODO" },
+    { id: 7, title: "Mobil uygulama için biometrik giriş desteği", storyPoint: 5, strategicTargetId: 1, sprintId: 2, status: "TODO" },
+    { id: 8, title: "Veritabanı indekslerini optimize et", storyPoint: 8, strategicTargetId: 2, sprintId: 1, status: "DONE" },
+    { id: 9, title: "5G kapsama alanı simülasyon aracı geliştir", storyPoint: 13, strategicTargetId: 3, sprintId: 2, status: "IN_PROGRESS" },
+    { id: 10, title: "Müşteri geri bildirim anket arayüzünü tasarla", storyPoint: 3, strategicTargetId: 1, sprintId: 2, status: "DONE" },
+    { id: 11, title: "Loglama altyapısını Graylog entegrasyonu ile güncelle", storyPoint: 5, strategicTargetId: 2, sprintId: 3, status: "TODO" },
+    { id: 12, title: "5G baz istasyonu konfigürasyon API'sini yaz", storyPoint: 13, strategicTargetId: 3, sprintId: 3, status: "TODO" }
 ];
 
 function initMockDb() {
@@ -176,8 +182,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function initApp() {
     await checkBackendConnection();
+    await determineDefaultSprint();
     await loadInitialData();
     setupEventListeners();
+}
+
+async function determineDefaultSprint() {
+    try {
+        if (useBackend) {
+            const sprintsRes = await fetch(BASE_URL + '/api/sprints');
+            if (sprintsRes.ok) {
+                localSprints = await sprintsRes.json();
+            }
+        } else {
+            localSprints = getMockSprints();
+        }
+
+        if (localSprints && localSprints.length > 0) {
+            const activeSprint = localSprints.find(s => s.active);
+            if (activeSprint) {
+                selectedSprintId = activeSprint.id;
+            } else {
+                selectedSprintId = localSprints[0].id;
+            }
+        }
+    } catch (e) {
+        console.warn("Failed to determine default sprint:", e);
+    }
 }
 
 async function checkBackendConnection() {
@@ -246,20 +277,6 @@ async function loadInitialData(sprintId = selectedSprintId) {
 
         if (!localSprints || localSprints.length === 0) {
             localSprints = defaultSprints;
-        }
-
-        // Default to active sprint on initial load if none selected
-        if (selectedSprintId === null && localSprints.length > 0) {
-            const activeSprint = localSprints.find(s => s.active);
-            if (activeSprint) {
-                selectedSprintId = activeSprint.id;
-                if (useBackend) {
-                    const dashRes = await fetch(BASE_URL + `/api/dashboard?sprintId=${selectedSprintId}`);
-                    currentDashboard = await dashRes.json();
-                } else {
-                    currentDashboard = calculateAlignmentLocal(selectedSprintId);
-                }
-            }
         }
 
         renderDashboard();

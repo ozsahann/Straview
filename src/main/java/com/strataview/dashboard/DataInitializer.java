@@ -68,6 +68,14 @@ public class DataInitializer implements CommandLineRunner {
             taskRepository.save(new Task("5G onboarding dokümantasyonunu taslak haline getir", 3, target3.getId(), sprint1.getId(), TaskStatus.DONE));
             taskRepository.save(new Task("API yanıt sürelerini optimize et", 5, target1.getId(), sprint3.getId(), TaskStatus.TODO));
 
+            // Seed additional tasks
+            taskRepository.save(new Task("Mobil uygulama için biometrik giriş desteği", 5, target1.getId(), sprint2.getId(), TaskStatus.TODO));
+            taskRepository.save(new Task("Veritabanı indekslerini optimize et", 8, target2.getId(), sprint1.getId(), TaskStatus.DONE));
+            taskRepository.save(new Task("5G kapsama alanı simülasyon aracı geliştir", 13, target3.getId(), sprint2.getId(), TaskStatus.IN_PROGRESS));
+            taskRepository.save(new Task("Müşteri geri bildirim anket arayüzünü tasarla", 3, target1.getId(), sprint2.getId(), TaskStatus.DONE));
+            taskRepository.save(new Task("Loglama altyapısını Graylog entegrasyonu ile güncelle", 5, target2.getId(), sprint3.getId(), TaskStatus.TODO));
+            taskRepository.save(new Task("5G baz istasyonu konfigürasyon API'sini yaz", 13, target3.getId(), sprint3.getId(), TaskStatus.TODO));
+
             logger.info("Demo verileri ve Sprint kayıtları başarıyla yüklendi.");
         } else {
             // Assign sprintId to existing tasks if missing
@@ -80,6 +88,22 @@ public class DataInitializer implements CommandLineRunner {
                     else task.setSprintId(sprint3.getId());
                     taskRepository.save(task);
                 }
+            }
+
+            // Seed additional tasks if task count is low
+            if (taskRepository.count() < 12) {
+                logger.info("Task sayısı az. Ek demo görevleri ekleniyor...");
+                List<StrategicTarget> targets = targetRepository.findAll();
+                StrategicTarget target1 = targets.get(0);
+                StrategicTarget target2 = targets.size() > 1 ? targets.get(1) : target1;
+                StrategicTarget target3 = targets.size() > 2 ? targets.get(2) : target1;
+
+                taskRepository.save(new Task("Mobil uygulama için biometrik giriş desteği", 5, target1.getId(), sprint2.getId(), TaskStatus.TODO));
+                taskRepository.save(new Task("Veritabanı indekslerini optimize et", 8, target2.getId(), sprint1.getId(), TaskStatus.DONE));
+                taskRepository.save(new Task("5G kapsama alanı simülasyon aracı geliştir", 13, target3.getId(), sprint2.getId(), TaskStatus.IN_PROGRESS));
+                taskRepository.save(new Task("Müşteri geri bildirim anket arayüzünü tasarla", 3, target1.getId(), sprint2.getId(), TaskStatus.DONE));
+                taskRepository.save(new Task("Loglama altyapısını Graylog entegrasyonu ile güncelle", 5, target2.getId(), sprint3.getId(), TaskStatus.TODO));
+                taskRepository.save(new Task("5G baz istasyonu konfigürasyon API'sini yaz", 13, target3.getId(), sprint3.getId(), TaskStatus.TODO));
             }
         }
 
