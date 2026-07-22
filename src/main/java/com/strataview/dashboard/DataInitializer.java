@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 public class DataInitializer implements CommandLineRunner {
 
@@ -36,13 +38,22 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (targetRepository.count() == 0) {
-            logger.info("Veri tabanı boş. Demo verileri yükleniyor...");
+        // Ensure Sprint records exist
+        Sprint sprint1, sprint2, sprint3;
+        if (sprintRepository.count() == 0) {
+            logger.info("Sprint verisi bulunamadı. Örnek Sprint kayıtları oluşturuluyor...");
+            sprint1 = sprintRepository.save(new Sprint("Sprint 1", "2026-06-01", "2026-06-15", false));
+            sprint2 = sprintRepository.save(new Sprint("Sprint 2", "2026-06-16", "2026-06-30", true));
+            sprint3 = sprintRepository.save(new Sprint("Sprint 3", "2026-07-01", "2026-07-15", false));
+        } else {
+            List<Sprint> sprints = sprintRepository.findAll();
+            sprint1 = sprints.get(0);
+            sprint2 = sprints.size() > 1 ? sprints.get(1) : sprint1;
+            sprint3 = sprints.size() > 2 ? sprints.get(2) : sprint1;
+        }
 
-            // Save Sprints with clean names and date ranges
-            Sprint sprint1 = sprintRepository.save(new Sprint("Sprint 1", "2026-06-01", "2026-06-15", false));
-            Sprint sprint2 = sprintRepository.save(new Sprint("Sprint 2", "2026-06-16", "2026-06-30", true));
-            Sprint sprint3 = sprintRepository.save(new Sprint("Sprint 3", "2026-07-01", "2026-07-15", false));
+        if (targetRepository.count() == 0) {
+            logger.info("Stratejik Hedefler boş. Demo verileri yükleniyor...");
 
             // Save targets
             StrategicTarget target1 = targetRepository.save(new StrategicTarget("Müşteri Sadakatini Artırma", 40.0));
@@ -59,7 +70,17 @@ public class DataInitializer implements CommandLineRunner {
 
             logger.info("Demo verileri ve Sprint kayıtları başarıyla yüklendi.");
         } else {
-            logger.info("Veri tabanında zaten veri mevcut. Yükleme atlanıyor.");
+            // Assign sprintId to existing tasks if missing
+            List<Task> existingTasks = taskRepository.findAll();
+            for (int i = 0; i < existingTasks.size(); i++) {
+                Task task = existingTasks.get(i);
+                if (task.getSprintId() == null) {
+                    if (i % 3 == 0) task.setSprintId(sprint1.getId());
+                    else if (i % 3 == 1) task.setSprintId(sprint2.getId());
+                    else task.setSprintId(sprint3.getId());
+                    taskRepository.save(task);
+                }
+            }
         }
 
         // Calculate and log initial alignment status

@@ -223,14 +223,29 @@ async function loadInitialData(sprintId = selectedSprintId) {
             const tasksRes = await fetch(BASE_URL + '/api/tasks');
             localTasks = await tasksRes.json();
 
+            try {
+                const sprintsRes = await fetch(BASE_URL + '/api/sprints');
+                if (sprintsRes.ok) {
+                    localSprints = await sprintsRes.json();
+                }
+            } catch (se) {
+                console.warn("Sprint endpoint fetch failed:", se);
+            }
+
             const dashRes = await fetch(dashUrl);
             currentDashboard = await dashRes.json();
-            localSprints = currentDashboard.sprints || [];
+            if ((!localSprints || localSprints.length === 0) && currentDashboard.sprints) {
+                localSprints = currentDashboard.sprints;
+            }
         } else {
             localTargets = getMockTargets();
             localTasks = getMockTasks();
             localSprints = getMockSprints();
             currentDashboard = calculateAlignmentLocal(sprintId);
+        }
+
+        if (!localSprints || localSprints.length === 0) {
+            localSprints = defaultSprints;
         }
 
         // Default to active sprint on initial load if none selected
@@ -461,17 +476,23 @@ function populateSprintSelect() {
     const taskSprintSelect = document.getElementById('task-sprint-select');
     if (taskSprintSelect) {
         taskSprintSelect.innerHTML = '<option value="" disabled>Sprint seçin...</option>';
+        let anySelected = false;
         localSprints.forEach(s => {
             const opt = document.createElement('option');
             opt.value = s.id;
             opt.innerText = getSprintLabel(s);
             if (selectedSprintId && s.id === parseInt(selectedSprintId)) {
                 opt.selected = true;
+                anySelected = true;
             } else if (!selectedSprintId && s.active) {
                 opt.selected = true;
+                anySelected = true;
             }
             taskSprintSelect.appendChild(opt);
         });
+        if (!anySelected && taskSprintSelect.options.length > 1) {
+            taskSprintSelect.options[1].selected = true;
+        }
     }
 
     // Update Sprint Date Display Pill in Overview Card
